@@ -29,10 +29,17 @@ class PaymentTranche(BaseModel):
     amount_percent: float
 
 class ProjectSchedule(BaseModel):
-    Engineering: tuple = Field(default=(1, 12), description="Start and end month for Engineering phase.")
-    Deliveries: tuple = Field(default=(14, 16), description="Start and end month for Deliveries phase.")
-    PAC: int = Field(default=20, description="Month for PAC milestone.")
-    FAC: int = Field(default=24, description="Month for FAC milestone.")
+    EngineeringStart: Optional[int] = Field(None, description="Start month for Engineering phase.")
+    EngineeringEnd: Optional[int] = Field(None, description="End month for Engineering phase.")
+    DeliveriesStart: Optional[int] = Field(None, description="Start month for Deliveries.")
+    DeliveriesEnd: Optional[int] = Field(None, description="End month for Deliveries.")
+    ErectionStart: Optional[int] = Field(None, description="Start month for Erection phase.")
+    ErectionEnd: Optional[int] = Field(None, description="End month for Erection phase.")
+    TechnicalServicesStart: Optional[int] = Field(None, description="Start month for Technical Services.")
+    TechnicalServicesEnd: Optional[int] = Field(None, description="End month for Technical Services.")
+    Commissioning: Optional[int] = Field(None, description="Month for Commissioning milestone.")
+    PAC: Optional[int] = Field(None, description="Month for Performance Acceptance Certificate (PAC) milestone.")
+    FAC: Optional[int] = Field(None, description="Month for Final Acceptance Certificate (FAC) milestone.")
 
 class PremiumCalculationInput(BaseModel):
     country: str
@@ -146,7 +153,6 @@ async def api_get_country_category(country: str):
 @app.post("/calculate_premiums")
 async def calculate_premiums(data: PremiumCalculationInput):
     global country_risk_df
-    country_risk_df = fetch_country_risk_categories(url)
     # Fetch country category
     country_category = get_country_category(data.country, country_risk_df)
     if country_category is None:
@@ -157,9 +163,14 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
      # Calculate average delivery date based on the project_schedule from input
     delivery_start, delivery_end = data.project_schedule.Deliveries
-    average_delivery = (delivery_start + delivery_end) / 2
     
-
+    if delivery_start and delivery_end:
+        average_delivery = (delivery_start + delivery_end) / 2
+    elif delivery_start:
+        average_delivery = delivery_start 
+    elif delivery_end:
+        average_delivery = delivery_end
+    
     # Prepare response with pre-ship and counter guarantee
     response = {
         "pre_ship": pre_ship_results,
@@ -175,7 +186,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             rlz = math.ceil(payment.payment_month - average_delivery)
 
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-        
+
         # Construct a new dictionary for each payment that includes the risk_tenor
         payment_info = {
             "name": payment.name,
