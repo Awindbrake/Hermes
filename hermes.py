@@ -11,6 +11,12 @@ app = FastAPI(
     title="Export Credit Guarantee Financial Analysis",
     description="Calculates pre-shipment, counter-guarantee, and post-shipment cover premiums.",
     version="1.0.0"
+    servers=[
+        {
+            "url": "https://hermes-credit-insurance-654dc041bae8.herokuapp.com",
+            "description": "Commission Calculator API"
+        }
+    ]
 )
 
 class PaymentTranche(BaseModel):
