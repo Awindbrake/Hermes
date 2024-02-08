@@ -167,16 +167,15 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
     # For each payment tranche, calculate premiums
     for payment in data.payments:
-        payment_date = payment["payment_month"]
-        if payment_date <= average_delivery:
+        
+        if payment.payment_month <= average_delivery:
             rlz = 0
         else:
-            rlz = math.ceil(payment_date - average_delivery)
+            rlz = math.ceil(payment.payment_month - average_delivery)
 
         payment["risk_tenor"] = rlz
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz)*payment["amount_%"]/100,2)
-        print(f"Payment for {payment['name']} has a risk tenor of {rlz} months and a post shipment premium of {post_ship_prem}%.")
-    
+        
         # Your logic to calculate rlz and premiums
         response["payments"].append({
             "name": payment.name,
