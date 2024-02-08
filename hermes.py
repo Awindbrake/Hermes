@@ -17,7 +17,7 @@ app = FastAPI(
             "description": "Commission Calculator API"
         }
     ]
-)
+    )
 
 class PaymentTranche(BaseModel):
     name: str
@@ -149,6 +149,11 @@ async def calculate_premiums(data: PremiumCalculationInput):
     # Calculate pre-ship and counter guarantees
     pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
     
+     # Calculate average delivery date based on the project_schedule from input
+    delivery_start, delivery_end = data.project_schedule.Deliveries
+    average_delivery = (delivery_start + delivery_end) / 2
+    
+
     # Prepare response with pre-ship and counter guarantee
     response = {
         "pre_ship": pre_ship_results,
@@ -164,7 +169,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             rlz = math.ceil(payment_date - average_delivery)
 
         payment["risk_tenor"] = rlz
-        post_ship_prem = round(calculate_short_term(category, buyer_cat, rlz)*payment["amount_%"]/100,2)
+        post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz)*payment["amount_%"]/100,2)
         print(f"Payment for {payment['name']} has a risk tenor of {rlz} months and a post shipment premium of {post_ship_prem}%.")
     
         # Your logic to calculate rlz and premiums
@@ -179,4 +184,4 @@ async def calculate_premiums(data: PremiumCalculationInput):
 @app.get("/")
 def read_root():
     return {"Welcome": "Navigate to /docs for API usage."}
-print("Short term cover premium in % of contract price:", post_ship_premium)
+
