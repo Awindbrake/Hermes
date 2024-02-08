@@ -1,14 +1,65 @@
-
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import List, Optional
 import pandas as pd
+import numpy as np
+import math
 import requests
 from bs4 import BeautifulSoup
 
-# The URL of the page you want to scrape
-url = 'https://www.exportkreditgarantien.de/en/solutions/costs/country-risk-categories.html'
+app = FastAPI(
+    title="Export Credit Guarantee Financial Analysis",
+    description="Calculates pre-shipment, counter-guarantee, and post-shipment cover premiums.",
+    version="1.0.0"
+)
 
-##------------Data and Tables --------------------
+class PaymentTranche(BaseModel):
+    name: str
+    payment_month: int
+    amount_percent: float
 
-def calculate_pre_ship(FBZ):
+class ProjectSchedule(BaseModel):
+    Engineering: tuple = Field(default=(1, 12), description="Start and end month for Engineering phase.")
+    Deliveries: tuple = Field(default=(14, 16), description="Start and end month for Deliveries phase.")
+    PAC: int = Field(default=20, description="Month for PAC milestone.")
+    FAC: int = Field(default=24, description="Month for FAC milestone.")
+
+class PremiumCalculationInput(BaseModel):
+    country: str
+    FBZ: float = Field(..., gt=0, description="Number of 3 months periods.")
+    Selbstkosten: int = Field(..., gt=0, description="Self-cost in percentage.")
+    Garantien: int = Field(..., gt=0, description="Guarantee volume excluding down payment guarantee in percentage.")
+    buyer_cat: str = Field(..., description="Buyer category.")
+    project_schedule: ProjectSchedule
+    payments: List[PaymentTranche]
+
+def fetch_country_risk_categories(url: str) -> pd.DataFrame:
+    
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    tables = soup.find_all('table')
+
+    all_data = []
+    for table in tables[1:-1]:  # Assuming relevant data is not in the first and last table
+        rows = table.find_all('tr')
+        for row in rows[1:]:  # Skip header
+            cells = row.find_all(['td', 'th'])
+            row_data = [cell.text.strip().replace("./.", "0") for cell in cells]
+            all_data.append(row_data)
+
+    df = pd.DataFrame(all_data, columns=["Country", "Category"])
+    return df
+
+def get_country_category(country: str, df: pd.DataFrame) -> Optional[int]:
+    category_row = df[df["Country"].str.contains(country, case=False, na=False)]
+    if not category_row.empty:
+        return int(category_row.iloc[0]["Category"])
+    else:
+        return None
+
+def calculate_pre_ship(FBZ: float, country_category: int) -> dict:
+    
+    # return a dictionary with pre-ship and counter_guar values
     pre_ship_cover_data = [
         {"Cat": 1, "pre-ship": (0.006 * FBZ) ** 0.5 + 0.264, "counter_guar": 0.12},
         {"Cat": 2, "pre-ship": (0.021 * FBZ) ** 0.5 + 0.431, "counter_guar": 0.2},
@@ -20,11 +71,12 @@ def calculate_pre_ship(FBZ):
     ]
     pre_ship_cover_calc = pd.DataFrame(pre_ship_cover_data)
     pre_ship_cover_calc.set_index('Cat', inplace=True)
-    
-    return pd.DataFrame(pre_ship_cover_calc)
+    pre_ship_cover_calc = pd.DataFrame(pre_ship_cover_data)
+    pre_ship_cover_calc.set_index('Cat', inplace=True)
+    result = pre_ship_cover_calc.loc[country_category].to_dict()
+    return result
 
-def calculate_short_term(country_cat, buyer_cat, rlz):
-
+def calculate_short_term(country_cat: int, buyer_cat: str, rlz: int) -> float:
     # Define the data as a dictionary
     short_term_slope = {
         'm': ['Sov+', 'Sov', 'Sov-', 'CC0', 'CC1', 'CC2', 'CC3', 'CC4', 'CC5'],
@@ -55,72 +107,70 @@ def calculate_short_term(country_cat, buyer_cat, rlz):
     # Convert the data into a DataFrame
     short_term_fix = pd.DataFrame(short_term_fix)
     short_term_fix.set_index('n', inplace=True)
-    
+
     m = short_term_slope.loc[buyer_cat, country_cat]
     n = short_term_fix.loc[buyer_cat, country_cat]
 
     premium = round(m * rlz + n, 2)
-    
+
 
     return premium
 
-# Fetch the content from the URL
-response = requests.get(url)
 
-# Use BeautifulSoup to parse the HTML content
-soup = BeautifulSoup(response.text, 'html.parser')
+# Pre-fetch country categories on app startup
+@app.on_event("startup")
+async def startup_event():
+    global country_risk_df
+    country_risk_df = fetch_country_risk_categories(url)
 
-
-# Find all tables on the page
-tables = soup.find_all('table')
-
-# Initialize an empty list to store the data
-all_data = []
-
-# Loop through each table
-for table in tables[1:-1]:
-    # Assuming the table is standard with rows (<tr>) and cells (<td> or <th>), iterate over it
-    rows = table.find_all('tr')
-    # Skip the first row (header)
-    for row in rows[1:]:
-        cells = row.find_all(['td', 'th'])  # Find both td and th elements
-        data = [cell.text.strip().replace("./.", "0") for cell in cells]
-        all_data.append(data)
-
-# Convert the list of lists into a DataFrame
-df = pd.DataFrame(all_data)
-
-#----------------Eingaben--------------------
-
-country = "Argentina" #input("which country: ")
-FBZ = 5 #float(input("number of 3 months periods (1.5 years are 5): "))/4
-Selbstkosten = 85 #int(input("Eingabe Selbstkosten in %:  "))
-Garantien = 20 #int(input("Garantievolumen außer Anzahlungsgarantie in %: "))
-Zahlungsrate = 85 #float(input("Zahlungsrate in %: "))
-rlz = 1 #int(input("Risikolaufzeit in Monaten (Ganzzahl): "))
-buyer_cat = "CC2" #input("Buyer Category - choose: 'Sov+', 'Sov', 'Sov-', 'CC0', 'CC1', 'CC2', 'CC3', 'CC4', 'CC5'")
-
-#----------------Berechnungen---------------
-# Filter the DataFrame to return rows matching the specified country
-country_df = df[df[0] == country]
-
-# Extract the category for the specified country
-category = int(country_df.iloc[0, 1]) if not country_df.empty else None
-
-pre_ship_cover_calc = calculate_pre_ship(FBZ)
-# row = pre_ship_cover_calc.loc[category]
+@app.post("/get_country_category")
+async def api_get_country_category(country: str):
+    category = get_country_category(country, country_risk_df)
+    if category is not None:
+        return {"country": country, "category": category}
+    else:
+        raise HTTPException(status_code=404, detail="Country not found")
 
 
-# print(row)
 
-# Assuming 'pre_ship' and 'counter_guar' are column names
-pre_ship_value = round(pre_ship_cover_calc.loc[category, 'pre-ship'] * Selbstkosten/100, 2)
-counter_guar_value = round(pre_ship_cover_calc.loc[category, 'counter_guar'] * Garantien/100,2)
-post_ship_premium = round(calculate_short_term(category, buyer_cat, rlz)*Zahlungsrate/100,2)
+@app.post("/calculate_premiums")
+async def calculate_premiums(data: PremiumCalculationInput):
+    # Fetch country category
+    country_category = get_country_category(data.country)
+    if country_category is None:
+        raise HTTPException(status_code=404, detail="Country not found")
+    
+    # Calculate pre-ship and counter guarantees
+    pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
+    
+    # Prepare response with pre-ship and counter guarantee
+    response = {
+        "pre_ship": pre_ship_results,
+        "payments": []
+    }
+    
+    # For each payment tranche, calculate premiums
+    for payment in data.payments:
+        payment_date = payment["payment_month"]
+        if payment_date <= average_delivery:
+            rlz = 0
+        else:
+            rlz = math.ceil(payment_date - average_delivery)
 
-#-----------Ausgaben------------------
+        payment["risk_tenor"] = rlz
+        post_ship_prem = round(calculate_short_term(category, buyer_cat, rlz)*payment["amount_%"]/100,2)
+        print(f"Payment for {payment['name']} has a risk tenor of {rlz} months and a post shipment premium of {post_ship_prem}%.")
+    
+        # Your logic to calculate rlz and premiums
+        response["payments"].append({
+            "name": payment.name,
+            "risk_tenor": rlz,
+            "post_shipment_premium": post_ship_prem
+        })
+    
+    return response
 
-print(f"Category for {country}: {category}")
-print("Pre-ship cover premium in % of contract price:", pre_ship_value)
-print("Counter guarantee cover premium in % of contract price:", counter_guar_value)
+@app.get("/")
+def read_root():
+    return {"Welcome": "Navigate to /docs for API usage."}
 print("Short term cover premium in % of contract price:", post_ship_premium)
