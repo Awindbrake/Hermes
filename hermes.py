@@ -173,8 +173,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         else:
             rlz = math.ceil(payment.payment_month - average_delivery)
 
-        
-        post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz)*payment["amount_%"]/100,2)
+        post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
         
         # Construct a new dictionary for each payment that includes the risk_tenor
         payment_info = {
