@@ -13,7 +13,7 @@ app = FastAPI(
     version="1.0.0"
     servers=[
         {
-            "url": "https://hermes-credit-insurance-654dc041bae8.herokuapp.com",
+            "url": "https://hermes-credit-insurance-f9a2d1069ad1.herokuapp.com",
             "description": "Commission Calculator API"
         }
     ]
