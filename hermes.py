@@ -7,6 +7,10 @@ import math
 import requests
 from bs4 import BeautifulSoup
 
+
+# Define the URL in the global scope
+url = 'https://www.exportkreditgarantien.de/en/solutions/costs/country-risk-categories.html'
+
 app = FastAPI(
     title="Export Credit Guarantee Financial Analysis",
     description="Calculates pre-shipment, counter-guarantee, and post-shipment cover premiums.",
