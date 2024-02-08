@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 app = FastAPI(
     title="Export Credit Guarantee Financial Analysis",
     description="Calculates pre-shipment, counter-guarantee, and post-shipment cover premiums.",
-    version="1.0.0"
+    version="1.0.0",
     servers=[
         {
             "url": "https://hermes-credit-insurance-f9a2d1069ad1.herokuapp.com",
