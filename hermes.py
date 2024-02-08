@@ -161,8 +161,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
     # Calculate pre-ship and counter guarantees
     pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
     
-     # Calculate average delivery date based on the project_schedule from input
-    delivery_start, delivery_end = data.project_schedule.Deliveries
+    delivery_start = data.project_schedule.DeliveriesStart
+    delivery_end = data.project_schedule.DeliveriesEnd
     
     if delivery_start and delivery_end:
         average_delivery = (delivery_start + delivery_end) / 2
