@@ -146,6 +146,7 @@ async def api_get_country_category(country: str):
 @app.post("/calculate_premiums")
 async def calculate_premiums(data: PremiumCalculationInput):
     global country_risk_df
+    country_risk_df = fetch_country_risk_categories(url)
     # Fetch country category
     country_category = get_country_category(data.country, country_risk_df)
     if country_category is None:
