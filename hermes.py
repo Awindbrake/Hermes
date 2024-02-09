@@ -49,6 +49,8 @@ class PremiumCalculationInput(BaseModel):
     buyer_cat: str = Field(..., description="Buyer category.")
     project_schedule: ProjectSchedule
     payments: List[PaymentTranche]
+    fin_amount: int = Field(..., description="financed amount in percentage.")
+    fin_tenor: int = Field(..., description="tenor of loan in years.")
 
 def fetch_country_risk_categories(url: str) -> pd.DataFrame:
     
@@ -124,7 +126,8 @@ def calculate_short_term(country_cat: int, buyer_cat: str, rlz: int) -> float:
     # Convert the data into a DataFrame
     short_term_fix = pd.DataFrame(short_term_fix)
     short_term_fix.set_index('n', inplace=True)
-
+    kreditlauf = 10
+    
     m = short_term_slope.loc[buyer_cat, country_cat]
     n = short_term_fix.loc[buyer_cat, country_cat]
 
@@ -133,6 +136,45 @@ def calculate_short_term(country_cat: int, buyer_cat: str, rlz: int) -> float:
 
     return premium
 
+def calculate_long_term(country_cat: int, buyer_cat: str, rlz_lang: int) -> float:
+    # Define the data as a dictionary
+    long_term_slope = {
+        'm': ['Sov+', 'Sov', 'Sov-', 'CC0', 'CC1', 'CC2', 'CC3', 'CC4', 'CC5'],
+        1: [0.0808, 0.0897, 0.0987, 0.0897, 0.1993, 0.2890, 0.3588, 0.4933, 0.7175],
+        2: [0.1789, 0.1987, 0.2186, 0.1987, 0.3180, 0.4094, 0.5167, 0.6548, 0.8694],
+        3: [0.3103, 0.3448, 0.3793, 0.3448, 0.4531, 0.5645, 0.6600, 0.8324, 1.0540],
+        4: [0.4864, 0.5404, 0.5944, 0.5404, 0.6387, 0.7703, 0.8843, 1.0710, 1.3362],
+        5: [0.6544, 0.7271, 0.7998, 0.7271, 0.8253, 0.9688, 1.1004, 1.3372, 1.3362],
+        6: [0.7938, 0.8820, 0.9702, 0.8820, 0.9800, 1.1349, 1.3524, 1.3372, 1.3362],
+        7: [0.9702, 1.0780, 1.1858, 1.0780, 1.2005, 1.3436, 1.3524, 1.3372, 1.3362]
+    }
+
+    # Convert the data into a DataFrame
+    long_term_slope = pd.DataFrame(long_term_slope)
+    long_term_slope.set_index('m', inplace=True)
+
+    long_term_fix = {
+        'n': ['Sov+', 'Sov', 'Sov-', 'CC0', 'CC1', 'CC2', 'CC3', 'CC4', 'CC5'],
+        1: [0.3139, 0.3488, 0.3837, 0.3488, 0.3488, 0.3488, 0.3488, 0.3488, 0.3488],
+        2: [0.3130, 0.3478, 0.3826, 0.3478, 0.3478, 0.3478, 0.3478, 0.3478, 0.3478],
+        3: [0.3103, 0.3448, 0.3793, 0.3448, 0.3448, 0.3448, 0.3448, 0.3448, 0.3448],
+        4: [0.3095, 0.3439, 0.3783, 0.3439, 0.3439, 0.3439, 0.3439, 0.3439, 0.3439],
+        5: [0.6632, 0.7369, 0.8106, 0.7369, 0.7369, 0.7369, 0.7369, 0.7369, 0.7369],
+        6: [1.0584, 1.1760, 1.2936, 1.1760, 1.1760, 1.1760, 1.1760, 1.1760, 1.1760],
+        7: [1.5876, 1.7640, 1.9404, 1.7640, 1.7640, 1.7640, 1.7640, 1.7640, 1.7640]
+    }
+
+    # Convert the data into a DataFrame
+    long_term_fix = pd.DataFrame(long_term_fix)
+    long_term_fix.set_index('n', inplace=True)
+
+    m_lang = long_term_slope.loc[buyer_cat, country_cat]
+    n_lang = long_term_fix.loc[buyer_cat, country_cat]
+
+    long_premium = round(m_lang * rlz_lang + n_lang, 2)
+
+
+    return long_premium
 
 # Pre-fetch country categories on app startup
 @app.on_event("startup")
@@ -165,7 +207,10 @@ async def calculate_premiums(data: PremiumCalculationInput):
 
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
-    
+    vorlauf = data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart if data.project_schedule.Commissioning else 0 
+    kreditlaufzeit = data.fin_tenor
+    rlz_lang = vorlauf/2 + kreditlaufzeit
+
     if delivery_start and delivery_end:
         average_delivery = (delivery_start + delivery_end) / 2
     elif delivery_start:
@@ -191,14 +236,15 @@ async def calculate_premiums(data: PremiumCalculationInput):
             rlz = math.ceil(payment.payment_month - average_delivery)
 
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-
+        financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
         # Construct a new dictionary for each payment that includes the risk_tenor
         payment_info = {
             "name": payment.name,
             "payment_month": payment.payment_month,
             "amount_percent": payment.amount_percent,
             "risk_tenor": rlz,
-            "post_shipment_premium": post_ship_prem
+            "post_shipment_premium": post_ship_prem,
+            "financing_premium": financing_cover
         }
         
         response["payments"].append(payment_info)
