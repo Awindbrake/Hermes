@@ -224,7 +224,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "country_category": country_category,
         "pre_ship_cover": pre_ship_cover,
         "guarantee_cover": guarantee_cover,
-        "payments": []
+        "payments": [],
+        "financing": [] 
     }
     
     # For each payment tranche, calculate premiums
@@ -250,8 +251,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "payment_month": payment.payment_month,
             "amount_percent": payment.amount_percent,
             "risk_tenor": rlz,
-            "post_shipment_premium": post_ship_prem,
-            "financing_premium": financing_cover
+            "post_shipment_premium": post_ship_prem
         }
         
         response["payments"].append(payment_info)
