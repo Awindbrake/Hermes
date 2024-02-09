@@ -237,6 +237,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
 
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
         financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
+        financing_info = {
+            "starting_point": data.project_schedule.Commissioning,
+            "credit_tenor": data.fin_tenor,
+            "amount_percent": data.fin_amount,
+            "financing_premium": financing_cover
+        }
+        
         # Construct a new dictionary for each payment that includes the risk_tenor
         payment_info = {
             "name": payment.name,
@@ -248,6 +255,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         }
         
         response["payments"].append(payment_info)
+        response["financing"].append(financing_info)
     
     return response
 
