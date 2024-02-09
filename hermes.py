@@ -160,8 +160,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
     # Calculate pre-ship and counter guarantees
     pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
-    pre_ship_cover = pre_ship_results["pre-ship"] * data.Selbstkosten / 100
-    guarantee_cover = pre_ship_results["counter_guar"] * data.Garantien / 100
+    pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
+    guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
 
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
