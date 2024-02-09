@@ -229,13 +229,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
     }
     
     # Construct a new dictionary for each payment that includes the risk_tenor
-    payment_info = {
-        "name": payment.name,
-        "payment_month": payment.payment_month,
-        "amount_percent": payment.amount_percent,
-        "risk_tenor": rlz,
-        "post_shipment_premium": post_ship_prem
-    }
+    financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
+    financing_info = {
+            "starting_point": data.project_schedule.Commissioning,
+            "credit_tenor": data.fin_tenor,
+            "amount_percent": data.fin_amount,
+            "financing_premium": financing_cover
+        }
 
     # For each payment tranche, calculate premiums
     for payment in data.payments:
@@ -246,14 +246,15 @@ async def calculate_premiums(data: PremiumCalculationInput):
             rlz = math.ceil(payment.payment_month - average_delivery)
 
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-        financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
-        financing_info = {
-            "starting_point": data.project_schedule.Commissioning,
-            "credit_tenor": data.fin_tenor,
-            "amount_percent": data.fin_amount,
-            "financing_premium": financing_cover
-        }
         
+        payment_info = {
+            "name": payment.name,
+            "payment_month": payment.payment_month,
+            "amount_percent": payment.amount_percent,
+            "risk_tenor": rlz,
+            "post_shipment_premium": post_ship_prem
+        }
+
         response["payments"].append(payment_info)
         
     response["financing"].append(financing_info)
