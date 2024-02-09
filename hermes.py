@@ -163,7 +163,6 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
-    average_delivery = 16
     
     if delivery_start and delivery_end:
         average_delivery = (delivery_start + delivery_end) / 2
@@ -174,6 +173,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
     # Prepare response with pre-ship and counter guarantee
     response = {
+        "country":data.country,
+        "country_category": country_category,
         "pre_ship": pre_ship_results,
         "payments": []
     }
