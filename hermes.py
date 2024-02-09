@@ -228,6 +228,15 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "financing": [] 
     }
     
+    # Construct a new dictionary for each payment that includes the risk_tenor
+    payment_info = {
+        "name": payment.name,
+        "payment_month": payment.payment_month,
+        "amount_percent": payment.amount_percent,
+        "risk_tenor": rlz,
+        "post_shipment_premium": post_ship_prem
+    }
+
     # For each payment tranche, calculate premiums
     for payment in data.payments:
         
@@ -245,17 +254,9 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "financing_premium": financing_cover
         }
         
-        # Construct a new dictionary for each payment that includes the risk_tenor
-        payment_info = {
-            "name": payment.name,
-            "payment_month": payment.payment_month,
-            "amount_percent": payment.amount_percent,
-            "risk_tenor": rlz,
-            "post_shipment_premium": post_ship_prem
-        }
-        
         response["payments"].append(payment_info)
-        response["financing"].append(financing_info)
+        
+    response["financing"].append(financing_info)
     
     return response
 
