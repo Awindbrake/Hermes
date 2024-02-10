@@ -43,7 +43,7 @@ class ProjectSchedule(BaseModel):
 
 class PremiumCalculationInput(BaseModel):
     country: str
-    FBZ: float = Field(..., description="Number of 3 months periods.")
+    #FBZ: float = Field(..., description="Number of 3 months periods.")
     Selbstkosten: int = Field(..., description="Self-cost in percentage.")
     Garantien: int = Field(..., description="Guarantee volume excluding down payment guarantee in percentage.")
     buyer_cat: str = Field(..., description="Buyer category.")
