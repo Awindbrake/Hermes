@@ -196,6 +196,9 @@ async def api_get_country_category(country: str):
 async def calculate_premiums(data: PremiumCalculationInput):
     global country_risk_df
     # Fetch country category
+    warning_starting_point = "empty"
+    warning_marketable_risk = "empty"
+    starting_point = 0
     country_category = get_country_category(data.country, country_risk_df)
     if country_category is None:
         raise HTTPException(status_code=404, detail="Country not found")
@@ -204,10 +207,17 @@ async def calculate_premiums(data: PremiumCalculationInput):
     pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
+    if data.project_schedule.Commissioning:
+        starting_point = data.project_schedule.Commissioning
+    elif data.project_schedule.FAC:
+        starting_point = data.project_schedule.FAC
+    else:
+        starting_point = 0
+        warning_starting_point = "You have not defined a valid starting point. The calculation assumes a pre-risk period of 1 year."
 
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
-    vorlauf = data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart if data.project_schedule.Commissioning else 0 
+    vorlauf = (data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart)/12 if starting_point else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
 
@@ -228,13 +238,24 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "financing": [] 
     }
     
+    if country_category == 0:
+        warning_marketable_risk = """
+                                    You have selected an OECD high income country. 
+                                    In these countries, short-term credit risks are considered 'marketable risks' for which no cover is provided by a government ECA.
+                                    Long-term credit risks can however be insured, the determination of the payable premium, however, may be subject to a so-called 'market test'. 
+                                    For premium calculation, I will pursue with country category 1 as benchmark.)
+                                    """
+        country_category = 1
+
     # Construct a new dictionary for each payment that includes the risk_tenor
     financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
             "starting_point": data.project_schedule.Commissioning,
             "credit_tenor": data.fin_tenor,
             "amount_percent": data.fin_amount,
-            "financing_premium": financing_cover
+            "financing_premium": financing_cover,
+            "warning_marketable_risk": warning_marketable_risk,
+            "warning_starting_point": warning_starting_point
         }
 
     # For each payment tranche, calculate premiums
