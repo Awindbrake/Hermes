@@ -80,6 +80,7 @@ def calculate_pre_ship(FBZ: float, country_category: int) -> dict:
     
     # return a dictionary with pre-ship and counter_guar values
     pre_ship_cover_data = [
+        {"Cat": 0, "pre-ship": (0.006 * FBZ) ** 0.5 + 0.264, "counter_guar": 0.12},
         {"Cat": 1, "pre-ship": (0.006 * FBZ) ** 0.5 + 0.264, "counter_guar": 0.12},
         {"Cat": 2, "pre-ship": (0.021 * FBZ) ** 0.5 + 0.431, "counter_guar": 0.2},
         {"Cat": 3, "pre-ship": (0.05 * FBZ) ** 0.5 + 0.573, "counter_guar": 0.28},
@@ -197,7 +198,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
     global country_risk_df
     # Fetch country category
     warning_starting_point = "empty"
-    warning_marketable_risk = "empty"
+    warning_marketable_risk_short = "empty"
+    warning_marketable_risk_long = "empty"
     starting_point = 0
     country_category = get_country_category(data.country, country_risk_df)
     if country_category is None:
@@ -239,11 +241,14 @@ async def calculate_premiums(data: PremiumCalculationInput):
     }
     
     if country_category == 0:
-        warning_marketable_risk = """
+        warning_marketable_risk_short = """
                                     You have selected an OECD high income country. 
-                                    In these countries, short-term credit risks are considered 'marketable risks' for which no cover is provided by a government ECA.
-                                    Long-term credit risks can however be insured, the determination of the payable premium, however, may be subject to a so-called 'market test'. 
-                                    For premium calculation, I will pursue with country category 1 as benchmark.)
+                                    In these countries, short-term credit risks are considered 'marketable risks' for which no cover is provided by a government ECA. 
+                                    For premium calculation, I will pursue with country category 1 as benchmark."""
+        warning_marketable_risk_long = """
+                                    You have selected an OECD high income country. 
+                                    Long-term credit risks can be insured, the determination of the payable premium, however, may be subject to a so-called 'market test'. 
+                                    For premium calculation, I will pursue with country category 1 as benchmark.
                                     """
         country_category = 1
 
@@ -254,7 +259,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "credit_tenor": data.fin_tenor,
             "amount_percent": data.fin_amount,
             "financing_premium": financing_cover,
-            "warning_marketable_risk": warning_marketable_risk,
+            "warning_marketable_risk": warning_marketable_risk_long,
             "warning_starting_point": warning_starting_point
         }
 
@@ -273,7 +278,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "payment_month": payment.payment_month,
             "amount_percent": payment.amount_percent,
             "risk_tenor": rlz,
-            "post_shipment_premium": post_ship_prem
+            "post_shipment_premium": post_ship_prem,
+            "warning_marketable_risk": warning_marketable_risk_short,
         }
 
         response["payments"].append(payment_info)
