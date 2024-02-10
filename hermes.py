@@ -219,7 +219,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
 
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
-    vorlauf = (data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart)/12 if starting_point>0 else 1 
+    vorlauf = (starting_point - data.project_schedule.DeliveriesStart)/12 if starting_point>0 else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
 
@@ -255,7 +255,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
     # Construct a new dictionary for each payment that includes the risk_tenor
     financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
-            "starting_point": data.project_schedule.Commissioning,
+            "starting_point": starting_point,
             "credit_tenor": data.fin_tenor,
             "amount_percent": data.fin_amount,
             "financing_premium": financing_cover,
