@@ -43,7 +43,7 @@ class ProjectSchedule(BaseModel):
 
 class PremiumCalculationInput(BaseModel):
     country: str
-    #FBZ: float = Field(..., description="Number of 3 months periods.")
+    FBZ: float = Field(..., description="Number of 3 months periods.")
     Selbstkosten: int = Field(..., description="Self-cost in percentage.")
     Garantien: int = Field(..., description="Guarantee volume excluding down payment guarantee in percentage.")
     buyer_cat: str = Field(..., description="Buyer category.")
@@ -51,6 +51,39 @@ class PremiumCalculationInput(BaseModel):
     payments: List[PaymentTranche]
     fin_amount: int = Field(..., description="financed amount in percentage.")
     fin_tenor: int = Field(..., description="tenor of loan in years.")
+
+def fetch_and_organize_content_by_section(url, start_header_text, end_header_text):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    all_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'])  # Adjust based on the page structure
+    start_index, end_index = None, None
+
+    # Identify start and end points
+    for i, element in enumerate(all_elements):
+        if element.text.strip() == start_header_text:
+            start_index = i
+        elif element.text.strip() == end_header_text:
+            end_index = i
+            break
+
+    if start_index is None or end_index is None:
+        return "Start or end marker not found."
+
+    # Initialize storage for organized content
+    section_content = {}
+    current_header = None
+
+    # Iterate through elements, organizing paragraphs under headers
+    for element in all_elements[start_index:end_index + 1]:  # Include the end marker
+        if element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            current_header = element.text.strip()
+            section_content[current_header] = []  # Initialize a new section for this header
+        elif element.name == 'p' and current_header:
+            # Append paragraphs to the current section
+            section_content[current_header].append(element.text.strip())
+
+    return section_content
 
 def fetch_country_risk_categories(url: str) -> pd.DataFrame:
     
@@ -231,10 +264,21 @@ async def calculate_premiums(data: PremiumCalculationInput):
     elif delivery_end:
         average_delivery = delivery_end
     
+    # URL and section headers to start and stop at
+    country = data.country.lower()
+    url = f"https://www.exportkreditgarantien.de/en/country-information/{country}.html"
+    start_header_text = "Short-term Business"
+    end_header_text = "Secure Risks"
+
+    # Fetch organized content
+    organized_content = fetch_and_organize_content_by_section(url, start_header_text, end_header_text)
+    #print(organized_content)
+    
     # Prepare response with pre-ship and counter guarantee
     response = {
         "country":data.country,
         "country_category": country_category,
+        "information":organized_content,
         "pre_ship_cover": pre_ship_cover,
         "guarantee_cover": guarantee_cover,
         "payments": [],
