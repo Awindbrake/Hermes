@@ -206,7 +206,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
         raise HTTPException(status_code=404, detail="Country not found")
     
     # Calculate pre-ship and counter guarantees
-    pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
+    FBZ = ProjectSchedule.DeliveriesStart/4 if ProjectSchedule.DeliveriesStart%4 == 0 else ProjectSchedule.DeliveriesStart//4+1
+    pre_ship_results = calculate_pre_ship(FBZ, country_category)
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
     if data.project_schedule.Commissioning >0:
