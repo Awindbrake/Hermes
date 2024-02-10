@@ -272,8 +272,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
 
     # Fetch organized content
     organized_content = ""
-    #organized_content = fetch_and_organize_content_by_section(url, start_header_text, end_header_text)
-    #print(organized_content)
+    organized_content = fetch_and_organize_content_by_section(url, start_header_text, end_header_text)
     
     # Prepare response with pre-ship and counter guarantee
     response = {
