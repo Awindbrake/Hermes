@@ -209,9 +209,9 @@ async def calculate_premiums(data: PremiumCalculationInput):
     pre_ship_results = calculate_pre_ship(data.FBZ, country_category)
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
-    if data.project_schedule.Commissioning:
+    if data.project_schedule.Commissioning >0:
         starting_point = data.project_schedule.Commissioning
-    elif data.project_schedule.FAC:
+    elif data.project_schedule.FAC>0:
         starting_point = data.project_schedule.FAC
     else:
         starting_point = 0
@@ -219,7 +219,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
 
     delivery_start = data.project_schedule.DeliveriesStart
     delivery_end = data.project_schedule.DeliveriesEnd
-    vorlauf = (data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart)/12 if starting_point else 1 
+    vorlauf = (data.project_schedule.Commissioning - data.project_schedule.DeliveriesStart)/12 if starting_point>0 else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
 
