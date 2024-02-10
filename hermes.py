@@ -237,6 +237,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "pre_ship_cover": pre_ship_cover,
         "guarantee_cover": guarantee_cover,
         "payments": [],
+        "total_post_ship":[],
         "financing": [] 
     }
     
@@ -262,7 +263,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "warning_marketable_risk": warning_marketable_risk_long,
             "warning_starting_point": warning_starting_point
         }
-
+    post_ship_premium = 0
     # For each payment tranche, calculate premiums
     for payment in data.payments:
         
@@ -272,7 +273,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             rlz = math.ceil(payment.payment_month - average_delivery)
 
         post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-        
+        post_ship_premium += post_ship_prem
         payment_info = {
             "name": payment.name,
             "payment_month": payment.payment_month,
@@ -283,7 +284,11 @@ async def calculate_premiums(data: PremiumCalculationInput):
         }
 
         response["payments"].append(payment_info)
-        
+
+    total_post = {
+            "total_premium_post_ship": post_ship_premium,
+        }    
+    response["total_post_ship"].append(total_post)
     response["financing"].append(financing_info)
     
     return response
