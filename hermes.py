@@ -317,7 +317,12 @@ async def calculate_premiums(data: PremiumCalculationInput):
         else:
             rlz = math.ceil(payment.payment_month - average_delivery)
 
-        post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
+        exception_list = ['down-payment', 'down payment', 'advance payment']
+        if payment.name.lower() in exception_list:
+            post_ship_prem = 0
+        else:
+            post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
+        #post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
         post_ship_premium += post_ship_prem
         payment_info = {
             "name": payment.name,
