@@ -276,11 +276,21 @@ async def calculate_premiums(data: PremiumCalculationInput):
     if country_category is None:
         raise HTTPException(status_code=404, detail="Country not found")
     
+     # Calculate basis for pre-ship and counter guarantees
+    results = data.project_schedule.calculate_average()
+    cover_amount_pre = results['Engineering']['value']+results['Equipment']['value']+results['Spares']['value']
+    cover_amount_guar =  results['Engineering']['value']+results['Equipment']['value']+results['Spares']['value']+results['Erection']['value']+results['Assistance']['value']
+    
+    
     # Calculate pre-ship and counter guarantees
     fab_time = int(data.project_schedule.EquipmentStart)/4 if int(data.project_schedule.EquipmentStart)%4 == 0 else int(data.project_schedule.EquipmentStart)//4+1
     pre_ship_results = calculate_pre_ship(fab_time, country_category)
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
+    pre_ship_cover_eur = round(pre_ship_cover/100 * cover_amount_pre,2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
+    guarantee_cover_eur = round(guarantee_cover/100 * cover_amount_guar,2)
+
+    
     if data.project_schedule.Commissioning >0:
         starting_point = data.project_schedule.Commissioning
     elif data.project_schedule.FAC>0:
@@ -318,7 +328,9 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "country_category": country_category,
         "information":organized_content,
         "pre_ship_cover": pre_ship_cover,
+        "pre_ship_cover_eur": pre_ship_cover_eur,
         "guarantee_cover": guarantee_cover,
+        "guarantee_cover_eur:" guarantee_cover_eur,
         "payments": [],
         "total_post_ship":[],
         "financing": [] 
@@ -367,7 +379,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
                 post_ship_prem_eur = 0
             else:
                 post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-                post_ship_prem_eur = round(post_ship_prem * category_value,2)
+                post_ship_prem_eur = round(post_ship_prem/100 * category_value,2)
         
             post_ship_premium += post_ship_prem
             post_ship_premium_eur += post_ship_prem_eur
