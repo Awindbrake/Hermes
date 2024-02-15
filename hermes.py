@@ -348,7 +348,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         }
     post_ship_premium = 0
     # For each payment tranche, calculate premiums
-    results = project_schedule_data.calculate_average()
+    results = data.project_schedule.calculate_average()
     for category in data.payments:
         category_name = category.schedule_item
         category_average = results[category_name]['average_month']
