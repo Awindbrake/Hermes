@@ -250,7 +250,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         raise HTTPException(status_code=404, detail="Country not found")
     
     # Calculate pre-ship and counter guarantees
-    fab_time = int(data.project_schedule.DeliveriesStart)/4 if int(data.project_schedule.DeliveriesStart)%4 == 0 else int(data.project_schedule.DeliveriesStart)//4+1
+    fab_time = int(data.project_schedule.EquipmentStart)/4 if int(data.project_schedule.EquipmentStart)%4 == 0 else int(data.project_schedule.EquipmentStart)//4+1
     pre_ship_results = calculate_pre_ship(fab_time, country_category)
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
@@ -262,9 +262,9 @@ async def calculate_premiums(data: PremiumCalculationInput):
         starting_point = 0
         warning_starting_point = "You have not defined a valid starting point. The calculation assumes a pre-risk period of 1 year."
 
-    delivery_start = data.project_schedule.DeliveriesStart
-    delivery_end = data.project_schedule.DeliveriesEnd
-    vorlauf = (starting_point - data.project_schedule.DeliveriesStart)/12 if starting_point>0 else 1 
+    delivery_start = data.project_schedule.EquipmentStart
+    delivery_end = data.project_schedule.EquipmentEnd
+    vorlauf = (starting_point - data.project_schedule.EquipmentStart)/12 if starting_point>0 else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
 
