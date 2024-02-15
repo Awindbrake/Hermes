@@ -350,7 +350,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         country_category = 1
 
     # Construct a new dictionary for each payment that includes the risk_tenor
-    financing_cover, m_lang, n_lang = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
+    financing_cover, _ = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
             "starting point of repayment schedule in month:": starting_point,
             "loan tenor": data.fin_tenor,
