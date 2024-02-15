@@ -28,19 +28,30 @@ class PaymentTranche(BaseModel):
     payment_month: int
     amount_percent: float
 
+class ScheduleCategory(BaseModel):
+    schedule_item: str = Field(..., description="Category of schedule, e.g., Engineering, Equipment, Services")
+    payments: List[PaymentTranche] = Field(..., description="List of payments under this category")   
+
 class ProjectSchedule(BaseModel):
     EngineeringStart: Optional[int] = Field(None, description="Start month for Engineering phase.")
     EngineeringEnd: Optional[int] = Field(None, description="End month for Engineering phase.")
-    DeliveriesStart: Optional[int] = Field(None, description="Start month for Deliveries.")
-    DeliveriesEnd: Optional[int] = Field(None, description="End month for Deliveries.")
+    EngineeringValue: Optional[float] = Field(0, description="value of item.")
+    EquipmentStart: Optional[int] = Field(None, description="Start month for Deliveries.")
+    EquipmentEnd: Optional[int] = Field(None, description="End month for Deliveries.")
+    EquipmentValue: Optional[float] = Field(0, description="value of item.")
+    SparesStart: Optional[int] = Field(None, description="Start month for spare parts, ocp.")
+    SparesEnd: Optional[int] = Field(None, description="End month for spare parts, ocp.")
+    SparesValue: Optional[float] = Field(0, description="value of item.")
     ErectionStart: Optional[int] = Field(None, description="Start month for Erection phase.")
     ErectionEnd: Optional[int] = Field(None, description="End month for Erection phase.")
-    TechnicalServicesStart: Optional[int] = Field(None, description="Start month for Technical Services.")
-    TechnicalServicesEnd: Optional[int] = Field(None, description="End month for Technical Services.")
+    ErectionValue: Optional[float] = Field(0, description="value of item.")
+    AssistanceStart: Optional[int] = Field(None, description="Start month for Technical Services.")
+    AssistanceEnd: Optional[int] = Field(None, description="End month for Technical Services.")
+    AssistanceValue: Optional[float] = Field(0, description="value of item.")
     Commissioning: Optional[int] = Field(None, description="Month for Commissioning milestone.")
     PAC: Optional[int] = Field(None, description="Month for Performance Acceptance Certificate (PAC) milestone.")
     FAC: Optional[int] = Field(None, description="Month for Final Acceptance Certificate (FAC) milestone.")
-
+    
 class PremiumCalculationInput(BaseModel):
     country: str
     #FBZ: float = Field(..., description="Number of 3 months periods.")
@@ -48,7 +59,7 @@ class PremiumCalculationInput(BaseModel):
     Garantien: int = Field(..., description="Guarantee volume excluding down payment guarantee in percentage.")
     buyer_cat: str = Field(..., description="Buyer category.")
     project_schedule: ProjectSchedule
-    payments: List[PaymentTranche]
+    payments: List[ScheduleCategory]
     fin_amount: int = Field(..., description="financed amount in percentage.")
     fin_tenor: int = Field(..., description="tenor of loan in years.")
 
