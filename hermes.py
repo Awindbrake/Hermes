@@ -246,7 +246,7 @@ def calculate_long_term(country_cat: int, buyer_cat: str, rlz_lang: int) -> floa
     long_premium = round(m_lang * rlz_lang + n_lang, 2)
     formula_string = f"long-term premium = {m_lang} * RLZ + {n_lang}"
 
-    return long_premium. formula_string
+    return long_premium, formula_string
 
 # Pre-fetch country categories on app startup
 @app.on_event("startup")
