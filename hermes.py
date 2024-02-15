@@ -246,7 +246,7 @@ def calculate_long_term(country_cat: int, buyer_cat: str, rlz_lang: int) -> floa
     long_premium = round(m_lang * rlz_lang + n_lang, 2)
     formula_string = f"long-term premium = {m_lang} * RLZ + {n_lang}"
 
-    return long_premium, m_lang, n_lang
+    return long_premium
 
 # Pre-fetch country categories on app startup
 @app.on_event("startup")
@@ -350,13 +350,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
         country_category = 1
 
     # Construct a new dictionary for each payment that includes the risk_tenor
-    financing_cover, _ = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
+    financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
             "starting point of repayment schedule in month:": starting_point,
             "loan tenor": data.fin_tenor,
             "loan amount in % of contract price": data.fin_amount,
-            "risk tenor": rlz_string,
-            "Post-shipment premium for medium- and long-term financing formula:": m_lang,
+            #"risk tenor": rlz_string,
+            #"Post-shipment premium for medium- and long-term financing formula:": m_lang,
             "Post-shipment premium for medium- and long-term financing in % of contract price": financing_cover,
             "Warning marketable risk (if applicable):": warning_marketable_risk_long,
             "Warning missing starting point (if applicable):": warning_starting_point
