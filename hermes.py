@@ -72,7 +72,7 @@ class ProjectSchedule(BaseModel):
             else:
                 average = 0
        
-        results[phase] = {"average_month": average, "value": phase_value}
+            results[phase] = {"average_month": average, "value": phase_value}
 
         return results
 
