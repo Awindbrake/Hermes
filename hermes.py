@@ -356,7 +356,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "loan tenor": data.fin_tenor,
             "loan amount in % of contract price": data.fin_amount,
             "risk tenor": rlz_string,
-            "Post-shipment premium for medium- and long-term financing formula:", formula,
+            "Post-shipment premium for medium- and long-term financing formula:": formula,
             "Post-shipment premium for medium- and long-term financing in % of contract price": financing_cover,
             "Warning marketable risk (if applicable):": warning_marketable_risk_long,
             "Warning missing starting point (if applicable):": warning_starting_point
