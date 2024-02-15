@@ -244,9 +244,9 @@ def calculate_long_term(country_cat: int, buyer_cat: str, rlz_lang: int) -> floa
     n_lang = long_term_fix.loc[buyer_cat, country_cat]
 
     long_premium = round(m_lang * rlz_lang + n_lang, 2)
+    formula_string = f"long-term premium = {m_lang} * RLZ + {n_lang}"
 
-
-    return long_premium
+    return long_premium. formula_string
 
 # Pre-fetch country categories on app startup
 @app.on_event("startup")
@@ -304,7 +304,8 @@ async def calculate_premiums(data: PremiumCalculationInput):
     vorlauf = (starting_point - data.project_schedule.EquipmentStart)/12 if starting_point>0 else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
-
+    rlz_string = f" risk tenor = (starting point: {starting_point} - start delivery: {data.project_schedule.EquipmentStart})/24 + repayment tenor in years: {data.fin_tenor}"
+    
     if delivery_start and delivery_end:
         average_delivery = (delivery_start + delivery_end) / 2
     elif delivery_start:
@@ -349,11 +350,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
         country_category = 1
 
     # Construct a new dictionary for each payment that includes the risk_tenor
-    financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
+    financing_cover, formula = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
             "starting point of repayment schedule in month:": starting_point,
             "loan tenor": data.fin_tenor,
             "loan amount in % of contract price": data.fin_amount,
+            "risk tenor": rlz_string,
+            "Post-shipment premium for medium- and long-term financing formula:", formula,
             "Post-shipment premium for medium- and long-term financing in % of contract price": financing_cover,
             "Warning marketable risk (if applicable):": warning_marketable_risk_long,
             "Warning missing starting point (if applicable):": warning_starting_point
