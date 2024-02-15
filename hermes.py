@@ -288,7 +288,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
     pre_ship_cover = round(pre_ship_results["pre-ship"] * data.Selbstkosten / 100, 2)
     pre_ship_cover_eur = round(pre_ship_cover/100 * cover_amount_pre,2)
     guarantee_cover = round(pre_ship_results["counter_guar"] * data.Garantien / 100, 2)
-    guarantee_cover_eur = round(guarantee_cover/100 * cover_amount_guar,2)
+    guar_cover_eur = round(guarantee_cover/100 * cover_amount_guar,2)
 
     
     if data.project_schedule.Commissioning >0:
@@ -330,7 +330,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         "pre_ship_cover": pre_ship_cover,
         "pre_ship_cover_eur": pre_ship_cover_eur,
         "guarantee_cover": guarantee_cover,
-        "guarantee_cover_eur:" guarantee_cover_eur,
+        "guarantee_cover_eur:": guar_cover_eur,
         "payments": [],
         "total_post_ship":[],
         "financing": [] 
