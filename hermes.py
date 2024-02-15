@@ -52,6 +52,33 @@ class ProjectSchedule(BaseModel):
     PAC: Optional[int] = Field(None, description="Month for Performance Acceptance Certificate (PAC) milestone.")
     FAC: Optional[int] = Field(None, description="Month for Final Acceptance Certificate (FAC) milestone.")
     
+    def calculate_average(self):
+        phases = ['Engineering', 'Equipment', 'Spares', 'Erection', 'Assistance']
+        results = {}
+        average = ""
+
+        # Calculate for delivery phases
+        for phase in phases:
+            start_month = getattr(self, f'{phase}Start', None)
+            end_month = getattr(self, f'{phase}End', None)
+            phase_value = getattr(self, f'{phase}Value', 0)
+
+            if start_month and end_month:
+                average = (start_month + end_month) /2
+            elif start_month:
+                average = start_month
+            elif end_month:
+                average = end_month
+            else:
+                average = 0
+       
+        results[phase] = {"average_month": average, "value": phase_value}
+
+        return results
+
+
+
+
 class PremiumCalculationInput(BaseModel):
     country: str
     #FBZ: float = Field(..., description="Number of 3 months periods.")
@@ -321,9 +348,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
         }
     post_ship_premium = 0
     # For each payment tranche, calculate premiums
-    
+    results = project_schedule_data.calculate_average()
     for category in data.payments:
+        category_name = category.schedule_item
+        category_average = results[category_name]['average_month']
+        category_value = results[category_name]['value']
         for payment in category.payments:
+            average_delivery = category_average
             if payment.payment_month <= average_delivery:
                 rlz = 0
             else:
@@ -371,9 +402,10 @@ async def calculate_premiums(data: PremiumCalculationInput):
        # }
 
         #response["payments"].append(payment_info)
-
+    total_in_EUR = post_ship_premium * category_value
     total_post = {
             "total_premium_post_ship": post_ship_premium,
+            "total post shipment premium in EUR:":total_in_EUR
         }    
     response["total_post_ship"].append(total_post)
     response["financing"].append(financing_info)
