@@ -322,7 +322,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
     post_ship_premium = 0
     # For each payment tranche, calculate premiums
     
-    for category in data.payment_schedule:
+    for category in data.payments:
         for payment in category.payments:
             if payment.payment_month <= average_delivery:
                 rlz = 0
