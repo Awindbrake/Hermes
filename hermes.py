@@ -337,7 +337,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
         
             post_ship_premium += post_ship_prem
             payment_info = {
-            "Schedule Item:":category,
+            "Schedule Item:":category.schedule_item,
             "name": payment.name,
             "payment_month": payment.payment_month,
             "amount_percent": payment.amount_percent,
