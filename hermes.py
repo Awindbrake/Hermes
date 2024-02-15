@@ -321,30 +321,55 @@ async def calculate_premiums(data: PremiumCalculationInput):
         }
     post_ship_premium = 0
     # For each payment tranche, calculate premiums
-    for payment in data.payments:
-        
-        if payment.payment_month <= average_delivery:
-            rlz = 0
-        else:
-            rlz = math.ceil(payment.payment_month - average_delivery)
+    
+    for category in data.payment_schedule:
+        for payment in category.payments:
+            if payment.payment_month <= average_delivery:
+                rlz = 0
+            else:
+                rlz = math.ceil(payment.payment_month - average_delivery)
 
-        exception_list = ['down-payment', 'down payment', 'advance payment']
-        if payment.name.lower() in exception_list:
-            post_ship_prem = 0
-        else:
-            post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-        #post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
-        post_ship_premium += post_ship_prem
-        payment_info = {
+            exception_list = ['down-payment', 'down payment', 'advance payment']
+            if payment.name.lower() in exception_list:
+                post_ship_prem = 0
+            else:
+                post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
+        
+            post_ship_premium += post_ship_prem
+            payment_info = {
             "name": payment.name,
             "payment_month": payment.payment_month,
             "amount_percent": payment.amount_percent,
             "risk_tenor": rlz,
             "post_shipment_premium": post_ship_prem,
             "warning_marketable_risk": warning_marketable_risk_short,
-        }
+            }
+            response["payments"].append(payment_info)
+    
+    #for payment in data.payments:
+        
+        #if payment.payment_month <= average_delivery:
+           # rlz = 0
+       # else:
+         #   rlz = math.ceil(payment.payment_month - average_delivery)
 
-        response["payments"].append(payment_info)
+        #exception_list = ['down-payment', 'down payment', 'advance payment']
+       # if payment.name.lower() in exception_list:
+        #    post_ship_prem = 0
+       # else:
+       #     post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
+        #post_ship_prem = round(calculate_short_term(country_category, data.buyer_cat, rlz) * payment.amount_percent / 100, 2)
+       # post_ship_premium += post_ship_prem
+       # payment_info = {
+           #"name": payment.name,
+            #"payment_month": payment.payment_month,
+           # "amount_percent": payment.amount_percent,
+           # "risk_tenor": rlz,
+           # "post_shipment_premium": post_ship_prem,
+          #  "warning_marketable_risk": warning_marketable_risk_short,
+       # }
+
+        #response["payments"].append(payment_info)
 
     total_post = {
             "total_premium_post_ship": post_ship_premium,
