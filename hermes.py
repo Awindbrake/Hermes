@@ -324,13 +324,13 @@ async def calculate_premiums(data: PremiumCalculationInput):
     
     # Prepare response with pre-ship and counter guarantee
     response = {
-        "country":data.country,
-        "country_category": country_category,
-        "information":organized_content,
-        "Pre-shipment cover in % of contract price for deliveries (ENG, EQU, SP)": pre_ship_cover,
+        "Country:":data.country,
+        "Country Category:": country_category,
+        "further information:":organized_content,
+        "Pre-shipment cover premium in % of contract price for deliveries (ENG, EQU, SP)": pre_ship_cover,
         "Pre-shipment cover premium in EUR": pre_ship_cover_eur,
-        "guarantee_cover": guarantee_cover,
-        "guarantee_cover_eur:": guar_cover_eur,
+        "Counter-guarantee cover premium in % of contract price (assuming guarantee percentages are on total contract price):": guarantee_cover,
+        "Counter-guarantee cover premium in EUR:": guar_cover_eur,
         "payments": [],
         "total_post_ship":[],
         "financing": [] 
@@ -351,12 +351,12 @@ async def calculate_premiums(data: PremiumCalculationInput):
     # Construct a new dictionary for each payment that includes the risk_tenor
     financing_cover = round(calculate_long_term(country_category, data.buyer_cat, rlz_lang) * data.fin_amount / 100, 2)
     financing_info = {
-            "starting_point": starting_point,
-            "credit_tenor": data.fin_tenor,
-            "amount_percent": data.fin_amount,
-            "financing_premium": financing_cover,
-            "warning_marketable_risk": warning_marketable_risk_long,
-            "warning_starting_point": warning_starting_point
+            "starting point of repayment schedule in month:": starting_point,
+            "loan tenor": data.fin_tenor,
+            "loan amount in % of contract price": data.fin_amount,
+            "Post-shipment premium for medium- and long-term financing in % of contract price": financing_cover,
+            "Warning marketable risk (if applicable):": warning_marketable_risk_long,
+            "Warning missing starting point (if applicable):": warning_starting_point
         }
     post_ship_premium = 0
     post_ship_premium_eur = 0
@@ -391,15 +391,15 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "Risk tenor:": rlz,
             "Post-shipment premium in %:": post_ship_prem,
             "Post-shipment premium in EUR:": post_ship_prem_eur,
-            "Warnings:": warning_marketable_risk_short,
+            "Warning marketable risk (if applicable):": warning_marketable_risk_short,
             }
             response["payments"].append(payment_info)
     
     
     total_in_EUR = post_ship_premium_eur
     total_post = {
-            "total_premium_post_ship": post_ship_premium,
-            "total post shipment premium in EUR:":total_in_EUR
+            "Total post-shipment premium in % of contract price": post_ship_premium,
+            "Total post-shipment premium in EUR:":total_in_EUR
         }    
     response["total_post_ship"].append(total_post)
     response["financing"].append(financing_info)
