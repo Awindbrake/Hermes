@@ -304,7 +304,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
     vorlauf = (starting_point - data.project_schedule.EquipmentStart)/12 if starting_point>0 else 1 
     kreditlaufzeit = data.fin_tenor
     rlz_lang = vorlauf/2 + kreditlaufzeit
-    rlz_string = f" risk tenor = (starting point: {starting_point} - start delivery: {data.project_schedule.EquipmentStart})/24 + repayment tenor in years: {data.fin_tenor}"
+    rlz_string = f" risk tenor({rlz_lang}) = (starting point: ({starting_point}) - start delivery: ({data.project_schedule.EquipmentStart}))/24 + repayment tenor in years: ({data.fin_tenor})"
     
     if delivery_start and delivery_end:
         average_delivery = (delivery_start + delivery_end) / 2
@@ -356,7 +356,7 @@ async def calculate_premiums(data: PremiumCalculationInput):
             "starting point of repayment schedule in month:": starting_point,
             "loan tenor": data.fin_tenor,
             "loan amount in % of contract price": data.fin_amount,
-            #"risk tenor": rlz_string,
+            "risk tenor": rlz_string,
             "Post-shipment premium for medium- and long-term financing formula:": formula,
             "Post-shipment premium for medium- and long-term financing in % of contract price": financing_cover,
             "Warning marketable risk (if applicable):": warning_marketable_risk_long,
